@@ -1,3 +1,15 @@
+## [1.13.2](https://github.com/jakowenko/double-take/compare/v1.13.1...v1.13.2) (2025-08-18)
+
+
+### Bug Fixes
+
+* **api:** safely serialize values to prevent XSS ([e11de9d](https://github.com/jakowenko/double-take/commit/e11de9dd6b4ea6b7ec9a5607a920d48961e9fa50))
+
+
+### Build
+
+* lock versions ([9ba932e](https://github.com/jakowenko/double-take/commit/9ba932edbef2088504427a4db16a733299b85950))
+
 ## [1.13.1](https://github.com/jakowenko/double-take/compare/v1.13.0...v1.13.1) (2022-10-27)
 
 
