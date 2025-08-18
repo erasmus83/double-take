@@ -23,12 +23,15 @@ app.use(UI.PATH, (req, res) => {
     `${process.cwd()}/frontend/${process.env.NODE_ENV === 'production' ? '' : 'dist/'}index.html`,
     'utf8'
   );
+  // Safely serialize values to prevent XSS
+  const ingressUrlSafe = JSON.stringify(req.headers['x-ingress-path'] || '');
+  const publicPathSafe = JSON.stringify(UI?.PATH || '');
   res.send(
     html.replace(
       '</head>',
       `<script>
-        window.ingressUrl = '${req.headers['x-ingress-path'] || ''}';
-        window.publicPath = '${UI?.PATH || ''}';
+        window.ingressUrl = ${ingressUrlSafe};
+        window.publicPath = ${publicPathSafe};
       </script>
       </head>`
     )
