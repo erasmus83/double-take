@@ -46,8 +46,8 @@ There's a lot of great open source software to perform facial recognition, but e
 
 ### Supported NVRs
 
+- [Agent DVR](https://www.ispyconnect.com)
 - [Frigate](https://github.com/blakeblackshear/frigate)
-
 
 ## Installation
 
@@ -102,6 +102,10 @@ To run the Double Take application in Docker on Windows, follow the below instru
 6. If all went well, your NodeJS app should now be up and running inside a Docker container. You can check your application by visiting `http://localhost:3000`.
 
 ## Integrations
+
+### [Agent DVR](https://www.ispyconnect.com)
+
+Agent DVR has Double Take integrated via API. See the [Agent DVR Userguide](https://www.ispyconnect.com/docs/agent/ai-servers#using-doubletake) for instructions.
 
 ### [Frigate](https://github.com/blakeblackshear/frigate)
 
