@@ -25,7 +25,7 @@
     "ace-builds": "1.32.6",
     "ace-code": "1.32.6",
     "ace-linters": "1.1.0",
-    "axios": "1.6.7",
+    "axios": "1.13.6",
     "copy-to-clipboard": "3.3.3",
     "luxon": "3.4.4",
     "mitt": "3.0.1",
