@@ -2,6 +2,7 @@
 
 ### Bug Fixes
 
+* **api:** strengthen inline-script XSS protection with safeJsonForInlineScript helper ([merge-pr-1](https://github.com/erasmus83/double-take/pull/2))
 * [BUG] Frigate sublabels
 
 ### Others

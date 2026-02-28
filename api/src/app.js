@@ -25,17 +25,32 @@ app.use(
 );
 app.use(`${UI.PATH}/api`, require('./routes'));
 
+// Safely serialize a value for embedding inside a <script> tag in HTML.
+// JSON.stringify alone is not sufficient because sequences like </script>,
+// <!--, and Unicode line terminators can break out of the script context
+// during HTML parsing.
+function safeJsonForInlineScript(value) {
+  return JSON.stringify(value)
+    .replace(/&/g, '\\u0026')
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 app.use(UI.PATH, (req, res) => {
   const html = fs.readFileSync(
     `${process.cwd()}/frontend/${process.env.NODE_ENV === 'development' ? 'dist/' : ''}index.html`,
     'utf8'
   );
+  const ingressUrlSafe = safeJsonForInlineScript(req.headers['x-ingress-path'] || '');
+  const publicPathSafe = safeJsonForInlineScript(UI?.PATH || '');
   res.send(
     html.replace(
       '</head>',
       `<script>
-        window.ingressUrl = '${req.headers['x-ingress-path'] || ''}';
-        window.publicPath = '${UI?.PATH || ''}';
+        window.ingressUrl = ${ingressUrlSafe};
+        window.publicPath = ${publicPathSafe};
       </script>
       </head>`
     )
