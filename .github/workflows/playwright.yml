@@ -9,10 +9,14 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: 18
+    - name: Install missing system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2 libffi-dev libx264-dev
     - name: Install dependencies
       run: npm i && cd api && npm i && cd ../frontend && npm i && cd ../
     - name: Install Playwright Browsers
@@ -30,4 +34,3 @@ jobs:
       uses: relative-ci/agent-upload-artifact-action@v2
       with:
         webpackStatsFile: ./frontend/dist/webpack-stats.json
-      
