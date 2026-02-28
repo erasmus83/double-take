@@ -54,7 +54,7 @@
     "probe-image-size": "^7.2.3",
     "read-last-lines": "^1.8.0",
     "romanization": "^0.0.1",
-    "sanitize-filename-truncate": "^1.0.2",
+    "sanitize-filename-truncate": "^1.0.3",
     "socket.io": "^4.7.4",
     "traverse": "^0.6.6",
     "uuid": "^9.0.0",
