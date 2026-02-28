@@ -10,12 +10,28 @@ const { AUTH, STORAGE, UI } = require('../constants')();
 const { BAD_REQUEST } = require('../constants/http-status');
 const DETECTORS = require('../constants/config').detectors();
 
+const WARNED_INVALID_EVENT = new Set();
+const WARNED_INVALID_RESPONSE = new Set();
+
+const warnOnce = (cache, key, message) => {
+  if (!cache.has(key)) {
+    cache.add(key);
+    console.warn(message);
+  }
+};
+
 const format = async (matches) => {
   const token = AUTH && matches.length ? jwt.sign({ route: 'storage' }) : null;
   matches = await Promise.all(
     matches.map(async (obj) => {
       const { id, filename, event, response, isTrained } = obj;
-      const { camera, type, zones, updatedAt } = JSON.parse(event);
+      const parsedEvent = tryParseJSON(event);
+      const parsedResponse = tryParseJSON(response);
+      if (!parsedEvent) warnOnce(WARNED_INVALID_EVENT, id, `match ${id} has invalid event JSON`);
+      if (!parsedResponse)
+        warnOnce(WARNED_INVALID_RESPONSE, id, `match ${id} has invalid response JSON`);
+      if (!parsedEvent || !Array.isArray(parsedResponse)) return null;
+      const { camera = null, type = null, zones = [], updatedAt = null } = parsedEvent || {};
       const key = `matches/${filename}`;
       const { width, height } = await sizeOf(
         fs.createReadStream(`${STORAGE.MEDIA.PATH}/${key}`)
@@ -33,14 +49,14 @@ const format = async (matches) => {
           height,
         },
         isTrained: !!isTrained,
-        response: JSON.parse(response),
+        response: Array.isArray(parsedResponse) ? parsedResponse : [],
         createdAt: obj.createdAt,
-        updatedAt: updatedAt || null,
+        updatedAt,
         token,
       };
     })
   );
-  return matches;
+  return matches.filter((obj) => obj);
 };
 
 module.exports.post = async (req, res) => {
@@ -157,9 +173,11 @@ module.exports.reprocess = async (req, res) => {
     filename: match.filename,
     tmp: `${STORAGE.MEDIA.PATH}/matches/${match.filename}`,
   });
+  const parsedEvent = tryParseJSON(match.event);
+  if (!parsedEvent) return res.status(BAD_REQUEST).error('match has invalid event JSON');
   database.update.match({
     id: match.id,
-    event: JSON.parse(match.event),
+    event: parsedEvent,
     response: results,
   });
   match = db

@@ -12,6 +12,15 @@ const { BAD_REQUEST } = require('../constants/http-status');
 const { AUTH, STORAGE, UI } = require('../constants')();
 const { tryParseJSON } = require('../util/validators.util');
 
+const WARNED_INVALID_TRAIN_META = new Set();
+
+const warnInvalidTrainMetaOnce = (id, fileId) => {
+  if (!WARNED_INVALID_TRAIN_META.has(id)) {
+    WARNED_INVALID_TRAIN_META.add(id);
+    console.warn(`train ${id || 'unknown'} has invalid meta JSON for fileId=${fileId}`);
+  }
+};
+
 function deleteThumbnailFromExif(imageBuffer) {
   const imageString = imageBuffer.toString('binary');
   const exifObj = piexif.load(imageString);
@@ -49,12 +58,17 @@ module.exports.get = async (req, res) => {
   files.forEach((file) => {
     file.results = [];
     const trainings = db.prepare('SELECT * FROM train WHERE fileId = ?').all(file.id);
-    trainings.forEach(({ detector, meta, createdAt }) => {
-      meta = JSON.parse(meta);
-      delete meta.detector;
+    trainings.forEach(({ detector, meta, createdAt, id }) => {
+      const parsedMeta = tryParseJSON(meta);
+      if (!parsedMeta) {
+        warnInvalidTrainMetaOnce(id || `unknown-${file.id}-${detector}`, file.id);
+        return;
+      }
+      const outputMeta = parsedMeta;
+      delete outputMeta.detector;
       file.results.push({
         detector,
-        result: tryParseJSON(JSON.stringify(meta)) || null,
+        result: outputMeta,
         createdAt,
       });
     });

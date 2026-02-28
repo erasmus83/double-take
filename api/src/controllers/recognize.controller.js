@@ -148,8 +148,18 @@ module.exports.start = async (req, res) => {
       );
     }
 
+    let polledResults;
+    try {
+      polledResults = await Promise.all(promises);
+    } catch (error) {
+      console.error(
+        `promise aggregation error for recognize.start (${camera}:${id}): ${error.message}`
+      );
+      throw error;
+    }
+
     const { best, misses, unknowns, results, attempts, counts } = recognize.normalize(
-      await Promise.all(promises)
+      polledResults
     );
 
     const duration = parseFloat((perf.stop('request').time / 1000).toFixed(2));

@@ -182,6 +182,11 @@ module.exports.process = async ({ camera, detector, tmp, errors }) => {
   } catch (error) {
     error.message = `${detector} process error: ${error.message}`;
     if (error.code === 'ECONNABORTED') delete error.stack;
+    console.error(
+      `detector request context: detector=${detector}, camera=${camera}, tmp=${tmp}, retries=${
+        errors[detector]
+      }`
+    );
     console.error(error);
     if (error.code === 'ECONNABORTED') {
       errors[detector] += 1;
@@ -233,6 +238,11 @@ module.exports.stream = async (url) => {
     const { data } = await (isDigest ? digestAuth.request(opts) : axios(opts));
     return data;
   } catch (error) {
+    console.error(
+      `stream request context: url=${url}, code=${error.code || 'n/a'}, status=${
+        error.response?.status || 'n/a'
+      }, maxContentLength=${error.config?.maxContentLength}, timeout=${error.config?.timeout}`
+    );
     error.message = `stream error: ${error.message}`;
     console.error(error);
   }
