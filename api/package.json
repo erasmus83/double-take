@@ -20,6 +20,9 @@
     "url": "https://github.com/skrashevich/double-take/issues"
   },
   "homepage": "https://github.com/skrashevich/double-take#readme",
+  "overrides": {
+    "html-encoding-sniffer": "^4.0.0"
+  },
   "dependencies": {
     "@aws-sdk/client-rekognition": "^3.105.0",
     "@mhoc/axios-digest-auth": "^0.8.0",
