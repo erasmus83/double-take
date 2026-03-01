@@ -16,18 +16,17 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io"
-	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"golang.org/x/sys/unix"
@@ -301,7 +300,7 @@ func start(c *cli.Context) error {
 
 	// Setup store, used by the real process later on
 	if store == "" {
-		tempdir, err := ioutil.TempDir("", "double-take")
+		tempdir, err := os.MkdirTemp("", "double-take")
 		if err != nil {
 			return err
 
@@ -317,7 +316,7 @@ func start(c *cli.Context) error {
 	os.MkdirAll(store, os.ModePerm)
 	var version string
 	if _, err := os.Stat(path.Join(store, "VERSION")); err == nil {
-		d, err := ioutil.ReadFile(path.Join(store, "VERSION"))
+		d, err := os.ReadFile(path.Join(store, "VERSION"))
 		if err != nil {
 			return err
 		}
@@ -334,7 +333,7 @@ func start(c *cli.Context) error {
 			}
 			fmt.Println("Failed copying binaries:", err.Error())
 		}
-		must(ioutil.WriteFile(path.Join(store, "VERSION"), []byte("1.13.11.8"), os.ModePerm))
+		must(os.WriteFile(path.Join(store, "VERSION"), []byte("1.13.11.8"), os.ModePerm))
 	}
 
 	var mounts []string
@@ -411,68 +410,81 @@ func copyBinary(state string, continueOnError bool) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	if err := copyFileContents(f, filepath.Join(state, source)); err != nil {
+	destPath := filepath.Join(state, "bundle")
+	if err := os.MkdirAll(destPath, 0755); err != nil {
 		return err
 	}
 
-	uaIface, err := archiver.ByExtension(source)
+	ctx := context.Background()
+	format, reader, err := archives.Identify(ctx, source, f)
 	if err != nil {
 		return err
 	}
 
-	un, ok := uaIface.(archiver.Unarchiver)
+	ex, ok := format.(archives.Extractor)
 	if !ok {
-		return fmt.Errorf("format specified by source filename is not an archive format: %s (%T)", source, uaIface)
+		return fmt.Errorf("format specified by source filename is not an archive format: %s (%T)", source, format)
 	}
 
-	mytar := &archiver.Tar{
-		OverwriteExisting:      true,
-		MkdirAll:               true,
-		ImplicitTopLevelFolder: false,
-		ContinueOnError:        continueOnError,
-	}
+	return ex.Extract(ctx, reader, func(ctx context.Context, fi archives.FileInfo) error {
+		// Sanitize the archive path to prevent path traversal attacks.
+		archivePath := filepath.FromSlash(path.Clean("/" + fi.NameInArchive))
+		archivePath = strings.TrimPrefix(archivePath, string(filepath.Separator))
+		outPath := filepath.Join(destPath, archivePath)
 
-	switch v := uaIface.(type) {
-	case *archiver.Tar:
-		uaIface = mytar
-	case *archiver.TarBrotli:
-		v.Tar = mytar
-	case *archiver.TarBz2:
-		v.Tar = mytar
-	case *archiver.TarGz:
-		v.Tar = mytar
-	case *archiver.TarLz4:
-		v.Tar = mytar
-	case *archiver.TarSz:
-		v.Tar = mytar
-	case *archiver.TarXz:
-		v.Tar = mytar
-	case *archiver.TarZstd:
-		v.Tar = mytar
-	}
-	return un.Unarchive(filepath.Join(state, "assets.tar.xz"), filepath.Join(state, "bundle"))
-}
-
-func copyFileContents(in fs.File, dst string) (err error) {
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
+		// Verify the resolved path stays within the destination directory.
+		rel, err := filepath.Rel(destPath, outPath)
+		if err != nil || strings.HasPrefix(rel, "..") {
+			if continueOnError {
+				fmt.Printf("skipping unsafe path in archive: %s\n", fi.NameInArchive)
+				return nil
+			}
+			return fmt.Errorf("path traversal detected in archive: %s", fi.NameInArchive)
 		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
 
-	os.Chmod(dst, 0755)
-	return
+		if fi.IsDir() {
+			return os.MkdirAll(outPath, fi.Mode().Perm())
+		}
+
+		if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+			if continueOnError {
+				fmt.Println("failed creating directory:", err)
+				return nil
+			}
+			return err
+		}
+
+		rc, err := fi.Open()
+		if err != nil {
+			if continueOnError {
+				fmt.Println("failed opening file in archive:", err)
+				return nil
+			}
+			return err
+		}
+		defer rc.Close()
+
+		outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fi.Mode().Perm())
+		if err != nil {
+			if continueOnError {
+				fmt.Println("failed creating output file:", err)
+				return nil
+			}
+			return err
+		}
+		defer outFile.Close()
+
+		if _, err = io.Copy(outFile, rc); err != nil {
+			if continueOnError {
+				fmt.Println("failed copying file content:", err)
+				return nil
+			}
+			return err
+		}
+		return nil
+	})
 }
 
 func must(err error) {
