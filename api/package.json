@@ -25,7 +25,7 @@
     "@mhoc/axios-digest-auth": "^0.8.0",
     "archiver": "^7.0.1",
     "axios": "^1.4.0",
-    "better-sqlite3": "^9.1.1",
+    "better-sqlite3": "^12.6.2",
     "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "execution-time": "^1.4.1",
