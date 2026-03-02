@@ -41,6 +41,10 @@ module.exports = {
       cameras: 'double-take/cameras',
       homeassistant: 'homeassistant',
     },
+    username: process.env.MQTT_USER ?? null,
+    password: process.env.MQTT_PASSWORD ?? null,
+    host: process.env.MQTT_HOST ?? 'localhost',
+    expire_after: 600,
   },
   opencv: {
     scale_factor: 1.05,

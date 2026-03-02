@@ -1,7 +1,10 @@
 const fs = require('fs');
 
 module.exports.core = {
-  server: { port: 3000 },
+  server: {
+    port: parseInt(process.env.DOUBLETAKE_PORT, 10) || 3000,
+    host: process.env.DOUBLETAKE_INTERNAL_HOST || '127.0.0.1',
+  },
   storage: {
     path: process.env.STORAGE_PATH ? process.env.STORAGE_PATH : './.storage',
     config: { path: process.env.CONFIG_PATH ? process.env.CONFIG_PATH : './.storage/config' },
