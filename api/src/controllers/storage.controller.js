@@ -14,7 +14,10 @@ const sanitize = require('sanitize-filename-truncate');
 
 module.exports.matches = async (req, res) => {
   const { box: showBox } = req.query;
-  const filename = sanitize(req.params.filename);
+  const filename = sanitize(req.params && req.params.filename ? req.params.filename : '');
+  if (!filename) {
+    return res.status(BAD_REQUEST).error('Invalid filename');
+  }
   const source = `${PATH}/matches/${filename}`;
 
   if (!fs.existsSync(source)) {
@@ -200,7 +203,7 @@ module.exports.latest = async (req, res) => {
 
   const request = await axios({
     method: 'get',
-    url: `http://0.0.0.0:${SERVER.PORT}${UI.PATH}/api/storage/matches/${originalFilename}?box=true`,
+    url: `http://${SERVER.HOST}:${SERVER.PORT}${UI.PATH}/api/storage/matches/${originalFilename}?box=true`,
     headers: AUTH ? { authorization: jwt.sign({ route: 'storage' }) } : null,
     responseType: 'arraybuffer',
   });
