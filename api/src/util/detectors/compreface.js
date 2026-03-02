@@ -15,8 +15,8 @@ const { COMPREFACE } = DETECTORS || {};
  * and computes the resultant orientation as a 3D vector based on the rotation matrices for each axis.
  * The rotations are applied in the order of yaw, pitch, and then roll.
  *
- * @param {number} pitch - The rotation angle around the X-axis in degrees.
- * @param {number} roll - The rotation angle around the Y-axis in degrees.
+ * @param {number} pitch - The rotation angle around the Y-axis in degrees.
+ * @param {number} roll - The rotation angle around the X-axis in degrees.
  * @param {number} yaw - The rotation angle around the Z-axis in degrees.
  * @returns {Array} An array representing the direction vector of the pose after the rotation.
  */
@@ -197,16 +197,21 @@ module.exports.normalize = ({ camera, data }) => {
         ...obj.mask,
         probability: parseFloat((obj.mask.probability * 100).toFixed(2)),
       };
-    if (obj.pose)
+    if (obj.pose) {
+      const pitchRad = (obj.pose.pitch * Math.PI) / 180;
+      const rollRad = (obj.pose.roll * Math.PI) / 180;
+      const yawRad = (obj.pose.yaw * Math.PI) / 180;
       output.pose = {
         ...obj.pose,
-        yAxisX: 70 * (-Math.cos(obj.pose.yaw) * Math.sin(obj.pose.roll)) + tdx,
+        yAxisX: 70 * (-Math.cos(yawRad) * Math.sin(rollRad)) + tdx,
         yAxisY:
-          Math.cos(obj.pose.pitch) * Math.cos(obj.pose.roll) -
-          Math.sin(obj.pose.pitch) * Math.sin(obj.pose.yaw) * Math.sin(obj.pose.roll) +
+          70 *
+            (Math.cos(pitchRad) * Math.cos(rollRad) -
+              Math.sin(pitchRad) * Math.sin(yawRad) * Math.sin(rollRad)) +
           tdy,
         orientation: isFacingCamera(obj.pose.pitch, obj.pose.roll, obj.pose.yaw),
       };
+    }
     const checks = actions.checks({ MATCH, UNKNOWN, ...output });
     if (checks.length) output.checks = checks;
     return checks !== false ? output : [];
