@@ -6,6 +6,10 @@ Community-owned resources:
 
 [Frigate/DoubleTake CIS Region Telegram chat](https://t.me/FrigateNVR) 🇺🇦🇰🇿🇧🇾🇷🇺🇺🇳 ~~make love, not war~~
 
+# NOTE from @erasmus83 02MAR26
+
+I've created this fork to address a couple of minor issues I had, plus dependencybot updates. It's working for me, feel free to make use of this repo however be aware that it is unsupported.
+
 # Double Take
 
 Unified UI and API for processing and training images for facial recognition.
