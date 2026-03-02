@@ -1,6 +1,8 @@
 module.exports.tryParseJSON = (json) => {
   try {
-    const o = JSON.parse(json);
+    if (json && typeof json === 'object') return json;
+    if (typeof json !== 'string') return false;
+    const o = JSON.parse(json.replace(/^\ufeff/, '').trim());
     if (o && typeof o === 'object') {
       return o;
     }
