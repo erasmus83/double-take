@@ -546,7 +546,7 @@ detectors:
     #   - garage
 
   rekognition:
-    # Enable this detector. The default is true (enabled) if the URL below is defined.
+    # Enable or disable this detector. The default is true (enabled).
     enabled: true
     aws_access_key_id: !secret aws_access_key_id
     aws_secret_access_key: !secret aws_secret_access_key
