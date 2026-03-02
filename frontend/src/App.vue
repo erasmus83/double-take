@@ -31,7 +31,7 @@ export default {
     Toolbar,
   },
   data: () => ({
-    socket: io(Constants().socket),
+    socket: io(Constants().socket.url, { path: Constants().socket.path }),
     toolbarHeight: null,
     loaded: false,
     dark: false,
