@@ -48,7 +48,8 @@ module.exports.theme = {
     const { ui: theme, editor } = req.body;
     ui.set({ theme, editor: { theme: editor } });
     config.set.ui({ theme, editor: { theme: editor } });
-    res.json({ success: true });
+    res.setHeader('Content-Type', 'application/json');
+    res.send({});
   },
 };
 

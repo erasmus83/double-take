@@ -14,13 +14,10 @@ const sanitize = require('sanitize-filename-truncate');
 
 module.exports.matches = async (req, res) => {
   const { box: showBox } = req.query;
-  const rawFilename = req.params.filename;
-  const filename = sanitize(typeof rawFilename === 'string' ? rawFilename : '');
-
+  const filename = sanitize(req.params && req.params.filename ? req.params.filename : '');
   if (!filename) {
     return res.status(BAD_REQUEST).error('Invalid filename');
   }
-
   const source = `${PATH}/matches/${filename}`;
 
   if (!fs.existsSync(source)) {
